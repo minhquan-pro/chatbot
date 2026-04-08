@@ -7,6 +7,8 @@ import { MessageList } from '@/components/chat/MessageList'
 import { Composer } from '@/components/chat/Composer'
 import { useAuthUser } from '@/hooks/useAuthUser'
 
+const PAGE_SIZE = 20
+
 function getErrorMessage(err) {
   const d = err.response?.data
   if (typeof d === 'string') return d
@@ -34,7 +36,17 @@ export default function ChatPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [hasOlder, setHasOlder] = useState(false)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const [reachedStart, setReachedStart] = useState(false)
+
   const scrollRef = useRef(null)
+  const messagesRef = useRef(messages)
+  messagesRef.current = messages
+
+  const pendingScrollBottomRef = useRef(false)
+  const scrollRestoreRef = useRef(null)
+  const loadOlderLockRef = useRef(false)
 
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current
@@ -45,19 +57,39 @@ export default function ChatPage() {
   }, [])
 
   useLayoutEffect(() => {
-    scrollToBottom()
+    if (scrollRestoreRef.current) {
+      const el = scrollRef.current
+      const { oldHeight, oldTop } = scrollRestoreRef.current
+      scrollRestoreRef.current = null
+      if (el) {
+        const nextTop = el.scrollHeight - oldHeight + oldTop
+        el.scrollTop = nextTop
+      }
+      return
+    }
+    if (pendingScrollBottomRef.current) {
+      pendingScrollBottomRef.current = false
+      scrollToBottom()
+    }
   }, [messages, scrollToBottom])
 
   useEffect(() => {
     if (!conversationId || !me) return
     let cancelled = false
+    pendingScrollBottomRef.current = false
+    scrollRestoreRef.current = null
+    setMessages([])
+    setHasOlder(false)
+    setReachedStart(false)
     ;(async () => {
       setError('')
       setLoading(true)
       try {
         const [convRes, msgRes] = await Promise.all([
           api.get(API_ENDPOINTS.conversations.list),
-          api.get(API_ENDPOINTS.conversations.messages(conversationId)),
+          api.get(API_ENDPOINTS.conversations.messages(conversationId), {
+            params: { limit: PAGE_SIZE },
+          }),
         ])
         if (cancelled) return
         const list = Array.isArray(convRes.data) ? convRes.data : []
@@ -66,7 +98,11 @@ export default function ChatPage() {
           setPeerEmail(row.peer.email)
         }
         const raw = Array.isArray(msgRes.data) ? msgRes.data : []
-        setMessages(raw.map((m) => mapApiMessage(m, me.id)))
+        const mapped = raw.map((m) => mapApiMessage(m, me.id))
+        setMessages(mapped)
+        setHasOlder(raw.length === PAGE_SIZE)
+        setReachedStart(raw.length < PAGE_SIZE)
+        pendingScrollBottomRef.current = true
       } catch (err) {
         if (!cancelled) setError(getErrorMessage(err))
       } finally {
@@ -77,6 +113,64 @@ export default function ChatPage() {
       cancelled = true
     }
   }, [conversationId, me])
+
+  const loadOlder = useCallback(async () => {
+    if (!conversationId || !me || loading || loadingOlder || !hasOlder) return
+    if (loadOlderLockRef.current) return
+    const oldest = messagesRef.current[0]
+    if (!oldest || String(oldest.id).startsWith('temp-')) return
+
+    const el = scrollRef.current
+    if (!el) return
+
+    loadOlderLockRef.current = true
+    const snapshot = {
+      oldHeight: el.scrollHeight,
+      oldTop: el.scrollTop,
+    }
+    scrollRestoreRef.current = snapshot
+    setLoadingOlder(true)
+    try {
+      const { data } = await api.get(API_ENDPOINTS.conversations.messages(conversationId), {
+        params: { before: oldest.id, limit: PAGE_SIZE },
+      })
+      const raw = Array.isArray(data) ? data : []
+      const older = raw.map((m) => mapApiMessage(m, me.id))
+      if (older.length === 0) {
+        scrollRestoreRef.current = null
+        requestAnimationFrame(() => {
+          const node = scrollRef.current
+          if (node) node.scrollTop = snapshot.oldTop
+        })
+        setHasOlder(false)
+        setReachedStart(true)
+        return
+      }
+      setHasOlder(older.length === PAGE_SIZE)
+      if (older.length < PAGE_SIZE) {
+        setReachedStart(true)
+      }
+      setMessages((prev) => [...older, ...prev])
+    } catch (err) {
+      scrollRestoreRef.current = null
+      requestAnimationFrame(() => {
+        const node = scrollRef.current
+        if (node) node.scrollTop = snapshot.oldTop
+      })
+      setError(getErrorMessage(err))
+    } finally {
+      setLoadingOlder(false)
+      loadOlderLockRef.current = false
+    }
+  }, [conversationId, me, loading, loadingOlder, hasOlder])
+
+  const onScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el || loading || loadingOlder || !hasOlder) return
+    if (el.scrollTop < 80) {
+      void loadOlder()
+    }
+  }, [loading, loadingOlder, hasOlder, loadOlder])
 
   async function handleSend(text) {
     if (!conversationId || !me) return
@@ -89,6 +183,7 @@ export default function ChatPage() {
       senderName: me.email,
       createdAt: Date.now(),
     }
+    pendingScrollBottomRef.current = true
     setMessages((prev) => [...prev, optimistic])
     setInput('')
     try {
@@ -96,9 +191,8 @@ export default function ChatPage() {
         content: text,
       })
       const mapped = mapApiMessage(data, me.id)
-      setMessages((prev) =>
-        prev.map((m) => (m.id === optimistic.id ? mapped : m)),
-      )
+      pendingScrollBottomRef.current = true
+      setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? mapped : m)))
     } catch (err) {
       setError(getErrorMessage(err))
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
@@ -158,11 +252,31 @@ export default function ChatPage() {
         </p>
       ) : null}
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+      >
         {loading ? (
           <p className="px-4 py-6 text-sm text-slate-500">Loading messages…</p>
         ) : (
-          <MessageList messages={messages} />
+          <>
+            <div
+              className="min-h-[2rem] shrink-0"
+              aria-hidden={!loadingOlder && !reachedStart}
+            >
+              {loadingOlder ? (
+                <div className="flex justify-center py-2">
+                  <span className="text-xs text-slate-400">Loading earlier messages…</span>
+                </div>
+              ) : reachedStart && messages.length > 0 ? (
+                <div className="flex justify-center py-2">
+                  <span className="text-xs text-slate-400">Start of conversation</span>
+                </div>
+              ) : null}
+            </div>
+            <MessageList messages={messages} />
+          </>
         )}
       </div>
 
