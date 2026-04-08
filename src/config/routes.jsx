@@ -1,23 +1,51 @@
-import { lazy } from "react";
-import { Navigate } from "react-router-dom";
-import { RequireAuth } from "@/components/RequireAuth";
+import { lazy } from 'react'
+import { Navigate } from 'react-router-dom'
+import { AppLayout } from '@/components/AppLayout'
+import { RequireAuth } from '@/components/RequireAuth'
 
-const LandingPage = lazy(() => import("@/pages/LandingPage"));
-const LoginPage = lazy(() => import("@/pages/LoginPage"));
-const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
-const ChatPage = lazy(() => import("@/pages/ChatPage"));
+const LandingPage = lazy(() => import('@/pages/LandingPage'))
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
+const UsersPage = lazy(() => import('@/pages/UsersPage'))
+const NewChatPage = lazy(() => import('@/pages/NewChatPage'))
+const ChatPage = lazy(() => import('@/pages/ChatPage'))
 
 /**
  * All app paths and page components live here — no duplicate path strings in App.jsx.
  * @type {import('react-router-dom').RouteObject[]}
  */
 export const routes = [
-  { path: "/", element: <LandingPage /> },
-  { path: "/login", element: <LoginPage /> },
-  { path: "/register", element: <RegisterPage /> },
   {
-    path: "/chat",
-    element: <RequireAuth><ChatPage /></RequireAuth>,
+    element: <AppLayout />,
+    children: [
+      { path: '/', element: <LandingPage /> },
+      {
+        path: '/users',
+        element: (
+          <RequireAuth>
+            <UsersPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: '/newchat',
+        element: (
+          <RequireAuth>
+            <NewChatPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: '/chat/:conversationId',
+        element: (
+          <RequireAuth>
+            <ChatPage />
+          </RequireAuth>
+        ),
+      },
+    ],
   },
-  { path: "*", element: <Navigate to="/" replace /> },
-];
+  { path: '/login', element: <LoginPage /> },
+  { path: '/register', element: <RegisterPage /> },
+  { path: '*', element: <Navigate to="/" replace /> },
+]
