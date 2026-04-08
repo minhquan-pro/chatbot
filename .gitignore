@@ -7,11 +7,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+package-lock.json
+yarn.lock
+
+# Build outputs
 dist
 dist-ssr
 *.local
+
+# Environment variables
 .env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
@@ -23,3 +32,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+Thumbs.db
+
+# IDE backup files
+*.iml
+*.sublime-workspace
+*.sublime-project
+
+# Misc
+.cache/
+temp/
+tmp/
