@@ -6,6 +6,7 @@ import { setTokens } from '@/libs/authStorage'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
+import { useAuthUser } from '@/hooks/useAuthUser'
 
 function getErrorMessage(err) {
   const d = err.response?.data
@@ -19,6 +20,7 @@ function getErrorMessage(err) {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const { refresh } = useAuthUser()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -41,7 +43,8 @@ export default function RegisterPage() {
         body?.refresh_token ?? body?.refresh ?? body?.tokens?.refresh_token
       if (access_token) {
         setTokens({ access_token, refresh_token })
-        navigate('/chat', { replace: true })
+        await refresh()
+        navigate('/users', { replace: true })
       } else {
         setError('Invalid response: missing tokens')
       }
