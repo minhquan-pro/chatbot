@@ -4,5 +4,15 @@ export const API_ENDPOINTS = {
     login: '/auth/login',
     register: '/auth/register',
     refresh: '/auth/refresh',
+    me: '/auth/me',
+  },
+  users: {
+    list: '/users',
+  },
+  conversations: {
+    list: '/conversations',
+    dm: (peerUserId) => `/conversations/dm/${peerUserId}`,
+    dmMessages: (peerUserId) => `/conversations/dm/${peerUserId}/messages`,
+    messages: (conversationId) => `/conversations/${conversationId}/messages`,
   },
 }
