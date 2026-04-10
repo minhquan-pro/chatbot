@@ -23,9 +23,14 @@ export function AppLayout() {
               Home
             </Link>
             {signedIn ? (
-              <Link to="/users" className="transition-colors hover:text-slate-900">
-                Users
-              </Link>
+              <>
+                <Link to="/users" className="transition-colors hover:text-slate-900">
+                  Users
+                </Link>
+                <Link to="/chatbot" className="transition-colors hover:text-slate-900">
+                  Chatbot
+                </Link>
+              </>
             ) : null}
           </nav>
         </div>
