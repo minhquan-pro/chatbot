@@ -1,14 +1,15 @@
-import { lazy } from 'react'
-import { Navigate } from 'react-router-dom'
-import { AppLayout } from '@/components/AppLayout'
-import { RequireAuth } from '@/components/RequireAuth'
+import { lazy } from "react";
+import { Navigate } from "react-router-dom";
+import { AppLayout } from "@/components/AppLayout";
+import { RequireAuth } from "@/components/RequireAuth";
 
-const LandingPage = lazy(() => import('@/pages/LandingPage'))
-const LoginPage = lazy(() => import('@/pages/LoginPage'))
-const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
-const UsersPage = lazy(() => import('@/pages/UsersPage'))
-const NewChatPage = lazy(() => import('@/pages/NewChatPage'))
-const ChatPage = lazy(() => import('@/pages/ChatPage'))
+const LandingPage = lazy(() => import("@/pages/LandingPage"));
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
+const UsersPage = lazy(() => import("@/pages/UsersPage"));
+const NewChatPage = lazy(() => import("@/pages/NewChatPage"));
+const ChatPage = lazy(() => import("@/pages/ChatPage"));
+const ChatbotPage = lazy(() => import("@/pages/ChatbotPage"));
 
 /**
  * All app paths and page components live here — no duplicate path strings in App.jsx.
@@ -18,9 +19,9 @@ export const routes = [
   {
     element: <AppLayout />,
     children: [
-      { path: '/', element: <LandingPage /> },
+      { path: "/", element: <LandingPage /> },
       {
-        path: '/users',
+        path: "/users",
         element: (
           <RequireAuth>
             <UsersPage />
@@ -28,7 +29,7 @@ export const routes = [
         ),
       },
       {
-        path: '/newchat',
+        path: "/newchat",
         element: (
           <RequireAuth>
             <NewChatPage />
@@ -36,16 +37,24 @@ export const routes = [
         ),
       },
       {
-        path: '/chat/:conversationId',
+        path: "/chat/:conversationId",
         element: (
           <RequireAuth>
             <ChatPage />
           </RequireAuth>
         ),
       },
+      {
+        path: "/chatbot",
+        element: (
+          <RequireAuth>
+            <ChatbotPage />
+          </RequireAuth>
+        ),
+      },
     ],
   },
-  { path: '/login', element: <LoginPage /> },
-  { path: '/register', element: <RegisterPage /> },
-  { path: '*', element: <Navigate to="/" replace /> },
-]
+  { path: "/login", element: <LoginPage /> },
+  { path: "/register", element: <RegisterPage /> },
+  { path: "*", element: <Navigate to="/" replace /> },
+];
