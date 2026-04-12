@@ -32,7 +32,7 @@ export function Composer({
       />
       <Button
         type="submit"
-        disabled={disabled || !value.trim()}
+        disabled={disabled || !value?.trim()}
         className="h-[44px] min-w-[44px] shrink-0 px-3"
         aria-label="Send message"
       >
