@@ -10,6 +10,7 @@ const UsersPage = lazy(() => import("@/pages/UsersPage"));
 const NewChatPage = lazy(() => import("@/pages/NewChatPage"));
 const ChatPage = lazy(() => import("@/pages/ChatPage"));
 const ChatbotPage = lazy(() => import("@/pages/ChatbotPage"));
+const AgentPage = lazy(() => import("@/pages/AgentPage"));
 
 /**
  * All app paths and page components live here — no duplicate path strings in App.jsx.
@@ -49,6 +50,14 @@ export const routes = [
         element: (
           <RequireAuth>
             <ChatbotPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/agent",
+        element: (
+          <RequireAuth>
+            <AgentPage />
           </RequireAuth>
         ),
       },

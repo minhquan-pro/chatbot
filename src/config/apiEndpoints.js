@@ -19,4 +19,8 @@ export const API_ENDPOINTS = {
     chat: "/chatbotMessage/chat",
     getMessages: "/chatbotMessage/messages",
   },
+  agent: {
+    chat: "/agenMessage/chat",
+    getMessages: "/agenMessage/messages",
+  },
 };

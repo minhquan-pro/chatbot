@@ -30,6 +30,9 @@ export function AppLayout() {
                 <Link to="/chatbot" className="transition-colors hover:text-slate-900">
                   Chatbot
                 </Link>
+                <Link to="/agent" className="transition-colors hover:text-slate-900">
+                  Agent
+                </Link>
               </>
             ) : null}
           </nav>

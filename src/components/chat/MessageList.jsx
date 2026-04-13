@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
 
 function formatTime(ts) {
   try {
@@ -60,20 +61,27 @@ const mdComponents = {
       );
     }
     return (
-      <code className={className} {...props}>
+      <code className={`${className ?? ""} font-mono text-[0.8125rem] leading-relaxed`} {...props}>
         {children}
       </code>
     );
   },
   pre: ({ children }) => (
-    <pre className="my-2 overflow-x-auto rounded-lg bg-slate-300/50 p-2 text-xs">{children}</pre>
+    <pre className="my-2 overflow-x-auto rounded-lg border border-slate-600/40 shadow-inner [&_code.hljs]:rounded-lg">
+      {children}
+    </pre>
   ),
 };
 
 function AssistantContent({ text }) {
   return (
-    <div className="markdown-body text-slate-800 **:wrap-break-word">
-      <ReactMarkdown components={mdComponents}>{text}</ReactMarkdown>
+    <div className="markdown-body break-words text-slate-800">
+      <ReactMarkdown
+        rehypePlugins={[[rehypeHighlight, { detect: true }]]}
+        components={mdComponents}
+      >
+        {text}
+      </ReactMarkdown>
     </div>
   );
 }
